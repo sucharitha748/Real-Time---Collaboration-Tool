@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Realtime Collab Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <header class="header">
+      <h1 class="title">Realtime Collab Editor</h1>
+      <div class="status-box">
+        <span id="online">Online: 0</span>
+        <span id="last">Last updated: -</span>
+      </div>
+    </header>
+
+    <main class="layout">
+
+      <!-- LEFT PANEL -->
+      <section class="editor-section">
+        <textarea id="editor" placeholder="Start typing..."></textarea>
+
+        <div class="controls">
+          <button id="saveBtn">💾 Save</button>
+          <span id="saveStatus"></span>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL -->
+      <aside class="side-panel">
+
+        <!-- Username card -->
+        <div class="card user-card">
+          <label for="username">Your Name</label>
+          <input id="username" class="input" placeholder="Enter name" />
+          <button id="setName" class="btn-small">Set</button>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="card log-card">
+          <h3>Activity</h3>
+          <ul id="activity"></ul>
+        </div>
+
+      </aside>
+    </main>
+
+  </div>
+
+  <script>
+const WS_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? `ws://${location.hostname}:8000/ws`
+  : `wss://${location.hostname}/ws`;
+
+let ws;
+let username = 'Anon';
+
+const editor = document.getElementById('editor');
+const onlineEl = document.getElementById('online');
+const lastEl = document.getElementById('last');
+const activity = document.getElementById('activity');
+const saveBtn = document.getElementById('saveBtn');
+const saveStatus = document.getElementById('saveStatus');
+
+function log(msg){
+  const li = document.createElement('li');
+  li.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  activity.prepend(li);
+}
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+
+  ws.addEventListener('open', () => log('Connected to server'));
+
+  ws.addEventListener('message', (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      if (data.type === 'init') {
+        editor.value = data.payload.text || '';
+        onlineEl.textContent = 'Online: ' + (data.payload.online || 0);
+        lastEl.textContent = 'Last updated: ' + (data.payload.last_updated || '-');
+        log('Document loaded');
+      } 
+      else if (data.type === 'update') {
+        editor.value = data.payload.text || '';
+        lastEl.textContent = 'Last updated: ' + (data.payload.last_updated || '-');
+        log((data.payload.author || 'Someone') + ' updated the document');
+      } 
+      else if (data.type === 'presence') {
+        onlineEl.textContent = 'Online: ' + (data.payload.online || 0);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    log('Disconnected... reconnecting');
+    setTimeout(connect, 1000);
+  });
+}
+
+// throttle websocket sends
+let throttled = false;
+editor.addEventListener('input', () => {
+  if (throttled) return;
+  throttled = true;
+
+  const payload = { type: 'update', payload: { text: editor.value, author: username } };
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+
+  setTimeout(() => throttled = false, 250);
+});
+
+// set username
+document.getElementById('setName').addEventListener('click', () => {
+  const val = document.getElementById('username').value.trim();
+  if (!val) return;
+  username = val;
+  if (ws.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({ type:'meta', payload:{ username }}));
+  log('Name set to ' + username);
+});
+
+// save document
+saveBtn.addEventListener('click', async () => {
+  saveStatus.textContent = 'Saving...';
+
+  try {
+    const resp = await fetch('http://localhost:8000/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: editor.value, name: username })
+    });
+
+    const j = await resp.json();
+    if (j.status === 'ok') {
+      saveStatus.textContent = 'Saved: ' + j.path;
+      log('Document saved');
+    }
+  } catch {
+    saveStatus.textContent = 'Error saving';
+  }
+
+  setTimeout(() => saveStatus.textContent = '', 2500);
+});
+
+connect();
+  </script>
+</body>
+</html>
