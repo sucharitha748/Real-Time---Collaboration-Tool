@@ -1,126 +1,112 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #eef1f6;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #6bb0ff, #d081ff);
+  background-attachment: fixed;
 }
 
-/* Layout */
-.wrapper { 
+.wrapper {
   max-width: 1200px;
-  margin: 20px auto;
-  padding: 0 20px;
+  margin: 30px auto;
+  padding: 20px;
 }
 
-.header {
+.glass {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: #fff;
 }
 
-.title {
-  font-size: 28px;
-  margin: 0;
-  color: #1e3a8a;
-  font-weight: 700;
+header h1 {
+  font-weight: 600;
 }
 
-.status-box span {
-  display: block;
-  color: #555;
-}
-
-/* Main layout */
-.layout {
+header .meta {
   display: flex;
   gap: 20px;
-  margin-top: 20px;
+  font-size: 14px;
 }
 
-/* Left editor box */
+main {
+  display: flex;
+  margin-top: 20px;
+  gap: 20px;
+}
+
 .editor-section {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 #editor {
   width: 100%;
-  height: 450px;
+  height: 420px;
   padding: 14px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
   resize: none;
-  border-radius: 10px;
-  border: 1px solid #cdd4e0;
-  background: white;
   font-size: 15px;
-  line-height: 1.4;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.9);
 }
 
-/* Save button */
 .controls {
-  margin-top: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  margin-top: 10px;
+  gap: 10px;
 }
 
 button {
-  background: #2563eb;
-  padding: 8px 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
   border: none;
+  background: #4f46e5;
   color: #fff;
-  font-weight: 600;
-  border-radius: 8px;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
   transition: 0.2s;
 }
 
 button:hover {
-  background: #1d4ed8;
+  background: #4338ca;
 }
 
-/* Right panel */
-.side-panel {
-  width: 290px;
+.sidebar {
+  width: 280px;
 }
 
-/* Reusable card */
-.card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #d7dce5;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 18px;
-}
-
-/* Input */
-.input {
+.userBox input {
   width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #cfd5e1;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: none;
+  outline: none;
 }
 
-/* Small button */
-.btn-small {
-  padding: 6px 12px;
-}
-
-/* Activity log */
-.log-card {
-  height: 360px;
+.log {
+  margin-top: 20px;
+  background: rgba(255,255,255,0.88);
+  border-radius: 12px;
+  padding: 14px;
+  height: 300px;
   overflow-y: auto;
 }
 
-.log-card ul {
-  padding: 0;
-  margin: 0;
+.log ul {
   list-style: none;
-}
-
-.log-card li {
-  padding: 6px 0;
-  font-size: 13px;
-  border-bottom: 1px solid #eceff4;
-  color: #333;
+  padding-left: 0;
 }

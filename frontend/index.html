@@ -3,26 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Realtime Collab Editor</title>
+  <title>Real-Time Collaboration Tool</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <div class="wrapper">
 
-    <header class="header">
-      <h1 class="title">Realtime Collab Editor</h1>
-      <div class="status-box">
+    <header class="glass">
+      <h1>Real-Time Collaboration Tool</h1>
+      <div class="meta">
         <span id="online">Online: 0</span>
-        <span id="last">Last updated: -</span>
+        <span id="last">Last Updated: -</span>
       </div>
     </header>
 
-    <main class="layout">
-
-      <!-- LEFT PANEL -->
-      <section class="editor-section">
-        <textarea id="editor" placeholder="Start typing..."></textarea>
+    <main>
+      <section class="editor-section glass">
+        <textarea id="editor" placeholder="Start typing together..."></textarea>
 
         <div class="controls">
           <button id="saveBtn">💾 Save</button>
@@ -30,35 +28,28 @@
         </div>
       </section>
 
-      <!-- RIGHT PANEL -->
-      <aside class="side-panel">
-
-        <!-- Username card -->
-        <div class="card user-card">
-          <label for="username">Your Name</label>
-          <input id="username" class="input" placeholder="Enter name" />
-          <button id="setName" class="btn-small">Set</button>
+      <aside class="sidebar glass">
+        <div class="userBox">
+          <label>Name</label>
+          <input id="username" placeholder="Enter your name" />
+          <button id="setName">Set</button>
         </div>
 
-        <!-- Activity Log -->
-        <div class="card log-card">
-          <h3>Activity</h3>
+        <div class="log">
+          <h3>Activity Log</h3>
           <ul id="activity"></ul>
         </div>
-
       </aside>
     </main>
-
   </div>
 
-  <script>
+<script>
 const WS_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? `ws://${location.hostname}:8000/ws`
   : `wss://${location.hostname}/ws`;
 
 let ws;
 let username = 'Anon';
-
 const editor = document.getElementById('editor');
 const onlineEl = document.getElementById('online');
 const lastEl = document.getElementById('last');
@@ -75,82 +66,82 @@ function log(msg){
 function connect() {
   ws = new WebSocket(WS_URL);
 
-  ws.addEventListener('open', () => log('Connected to server'));
+  ws.addEventListener('open', () => log('Connected'));
 
   ws.addEventListener('message', (ev) => {
-    try {
+    try{
       const data = JSON.parse(ev.data);
-      if (data.type === 'init') {
+
+      if(data.type === 'init'){
         editor.value = data.payload.text || '';
-        onlineEl.textContent = 'Online: ' + (data.payload.online || 0);
-        lastEl.textContent = 'Last updated: ' + (data.payload.last_updated || '-');
-        log('Document loaded');
-      } 
-      else if (data.type === 'update') {
-        editor.value = data.payload.text || '';
-        lastEl.textContent = 'Last updated: ' + (data.payload.last_updated || '-');
-        log((data.payload.author || 'Someone') + ' updated the document');
-      } 
-      else if (data.type === 'presence') {
-        onlineEl.textContent = 'Online: ' + (data.payload.online || 0);
+        onlineEl.textContent = 'Online: ' + data.payload.online;
+        lastEl.textContent = 'Last Updated: ' + (data.payload.last_updated || '-');
+        log('Loaded existing document');
       }
-    } catch(e) {
-      console.error(e);
+
+      else if(data.type === 'update'){
+        editor.value = data.payload.text;
+        lastEl.textContent = 'Last Updated: ' + data.payload.last_updated;
+        log(data.payload.author + ' updated the document');
+      }
+
+      else if(data.type === 'presence'){
+        onlineEl.textContent = 'Online: ' + data.payload.online;
+      }
+
+    } catch(e){
+      console.error('Invalid message', e);
     }
   });
 
   ws.addEventListener('close', () => {
-    log('Disconnected... reconnecting');
+    log('Disconnected — retrying...');
     setTimeout(connect, 1000);
   });
 }
 
-// throttle websocket sends
 let throttled = false;
 editor.addEventListener('input', () => {
-  if (throttled) return;
+  if(throttled) return;
   throttled = true;
 
-  const payload = { type: 'update', payload: { text: editor.value, author: username } };
-  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+  if(ws.readyState === WebSocket.OPEN){
+    ws.send(JSON.stringify({ 
+      type: 'update', 
+      payload: { text: editor.value, author: username }
+    }));
+  }
 
   setTimeout(() => throttled = false, 250);
 });
 
-// set username
 document.getElementById('setName').addEventListener('click', () => {
   const val = document.getElementById('username').value.trim();
-  if (!val) return;
-  username = val;
-  if (ws.readyState === WebSocket.OPEN)
-      ws.send(JSON.stringify({ type:'meta', payload:{ username }}));
-  log('Name set to ' + username);
+  if(val){
+    username = val;
+    log('Name set to ' + username);
+  }
 });
 
-// save document
-saveBtn.addEventListener('click', async () => {
+saveBtn.addEventListener('click', async ()=>{
   saveStatus.textContent = 'Saving...';
-
-  try {
+  try{
     const resp = await fetch('http://localhost:8000/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: editor.value, name: username })
     });
-
-    const j = await resp.json();
-    if (j.status === 'ok') {
-      saveStatus.textContent = 'Saved: ' + j.path;
-      log('Document saved');
-    }
-  } catch {
-    saveStatus.textContent = 'Error saving';
+    const json = await resp.json();
+    saveStatus.textContent = 'Saved: ' + json.path;
+  } catch(e){
+    saveStatus.textContent = 'Save failed';
   }
 
-  setTimeout(() => saveStatus.textContent = '', 2500);
+  setTimeout(()=> saveStatus.textContent = '', 3000); 
 });
 
 connect();
-  </script>
+</script>
+
 </body>
 </html>
